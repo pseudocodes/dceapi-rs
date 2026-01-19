@@ -5,23 +5,26 @@ use std::sync::LazyLock;
 
 use crate::error::{Error, Result};
 use crate::http::{BaseClient, RequestOptions};
-use crate::models::{ArticleDetail, GetArticleByPageRequest, GetArticleByPageResponse};
+use crate::models::{GetArticleByPageRequest, GetArticleByPageResponse};
 
 /// API endpoint for paginated article list.
 const PATH_GET_ARTICLE_BY_PAGE: &str = "/dceapi/cms/info/articleByPage";
 
-/// API endpoint for article detail.
-const PATH_GET_ARTICLE_DETAIL: &str = "/dceapi/cms/info/articleDetail";
-
 /// Valid column IDs for articles.
+/// - 244: 业务公告与通知
+/// - 245: 活动公告与通知
+/// - 246: 交易所新闻-文媒
+/// - 248: 媒体看大商所-文媒
+/// - 1076: 今日提示
+/// - 242: 新闻发布
 static VALID_COLUMN_IDS: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
     let mut set = HashSet::new();
-    set.insert("244");  // 交易所公告
-    set.insert("245");  // 交易所通知
-    set.insert("246");  // 交割信息
-    set.insert("248");  // 会员服务系统公告
-    set.insert("1076"); // 期权公告
-    set.insert("242");  // 新闻
+    set.insert("244"); // 业务公告与通知
+    set.insert("245"); // 活动公告与通知
+    set.insert("246"); // 交易所新闻-文媒
+    set.insert("248"); // 媒体看大商所-文媒
+    set.insert("1076"); // 今日提示
+    set.insert("242"); // 新闻发布
     set
 });
 
@@ -48,13 +51,13 @@ impl NewsService {
     /// * `req` - Request parameters including column_id, page_no, page_size
     /// * `opts` - Optional request options
     ///
-    /// # Valid Column IDs
-    /// * `244` - Exchange announcements (交易所公告)
-    /// * `245` - Exchange notices (交易所通知)
-    /// * `246` - Delivery information (交割信息)
-    /// * `248` - Member service announcements (会员服务系统公告)
-    /// * `1076` - Options announcements (期权公告)
-    /// * `242` - News (新闻)
+    /// # Valid Column IDs (官方文档定义)
+    /// * `244` - 业务公告与通知
+    /// * `245` - 活动公告与通知
+    /// * `246` - 交易所新闻-文媒
+    /// * `248` - 媒体看大商所-文媒
+    /// * `1076` - 今日提示
+    /// * `242` - 新闻发布
     pub async fn get_article_by_page(
         &self,
         mut req: GetArticleByPageRequest,
@@ -76,29 +79,5 @@ impl NewsService {
         self.client
             .do_post(PATH_GET_ARTICLE_BY_PAGE, &req, opts)
             .await
-    }
-
-    /// Get article detail by ID.
-    ///
-    /// # Arguments
-    /// * `article_id` - The article ID to fetch
-    /// * `opts` - Optional request options
-    pub async fn get_article_detail(
-        &self,
-        article_id: &str,
-        opts: Option<RequestOptions>,
-    ) -> Result<ArticleDetail> {
-        if article_id.is_empty() {
-            return Err(Error::validation("article_id", "article_id is required"));
-        }
-
-        #[derive(serde::Serialize)]
-        #[serde(rename_all = "camelCase")]
-        struct Request<'a> {
-            article_id: &'a str,
-        }
-
-        let req = Request { article_id };
-        self.client.do_post(PATH_GET_ARTICLE_DETAIL, &req, opts).await
     }
 }
